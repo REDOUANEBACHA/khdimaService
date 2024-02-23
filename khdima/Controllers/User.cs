@@ -1,5 +1,6 @@
 ﻿using khdima.dbContext;
 using khdima.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ namespace khdima.Controllers
             _context = context;
         }
 
+        [Authorize]
         [HttpGet ("GetAllUser",  Name = "GetAllUser")]
         public  async Task<IActionResult> GetAllUser()
         {
