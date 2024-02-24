@@ -4,6 +4,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using khdima.Helpers;
+using khdima.Helpers.MiddleweareJwt;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,7 +37,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 });
 
 
+// mettre classe security partager 
+builder.Services.AddSingleton<Security>();
+
+// add cors 1
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost3000",
+        builder =>
+        {
+            builder.WithOrigins("http://localhost:3000")
+                   .AllowAnyHeader()
+                   .AllowAnyMethod();
+        });
+});
+
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -44,10 +62,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Ajoutez le Middleware pour ajouter le token JWT à l'en-tête des requêtes sortantes
+app.UseMiddleware<JwtTokenMiddleware>("votre_token_jwt");
+
+// utuliser le cors configurer  
+app.UseCors("AllowLocalhost3000");
 
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapControllers();
