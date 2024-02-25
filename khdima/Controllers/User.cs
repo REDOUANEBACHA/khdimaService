@@ -1,9 +1,14 @@
 ﻿using khdima.dbContext;
+using khdima.Helpers;
 using khdima.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 using System.Xml.Linq;
 
 namespace khdima.Controllers
@@ -14,29 +19,24 @@ namespace khdima.Controllers
     {
         // appelle le dbconext pour l'utiliser comme outile pour la base de donnee
         private readonly AppDbContext _context;
-        public user(AppDbContext context)
+
+        private readonly Security _security;
+        public user(AppDbContext context, Security security)
         {
             _context = context;
+            _security = security;
+      
         }
 
-        [Authorize]
         [HttpGet ("GetAllUser",  Name = "GetAllUser")]
+        [Authorize (Roles= "Admin")]
         public  async Task<IActionResult> GetAllUser()
         {
-            var users = await _context .Users.Select(u=> new
-            {
-                u.id,
-                u.first_name,
-                u.last_name,
-                u.phone,
-                u.birthday_date,
-                u.email,
-                u.last_access,
-                u.first_access,
-                u.created_at,
-                u.updated_at
-            }
-            ).ToListAsync();
+            var token = Request.Cookies["AccessToken"];
+            // Decoder un JWT
+            var decodedToken = _security.DecodedToken(token);
+
+            var users = await _context .Users.ToListAsync();
 
             return Ok(users);
         }
@@ -52,8 +52,8 @@ namespace khdima.Controllers
             /*   
             
 
-             obligatoir
-             ----------
+           obligatoir
+            ----------
              {
                "first_name": "John",
                "last_name": "Doe",
@@ -79,15 +79,19 @@ namespace khdima.Controllers
              "first_access": "2024-02-22T13:14:34.969Z",
              "created_at": "2024-02-22T13:14:34.969Z",
              "updated_at": "202-02-22T13:14:34.969Z"
-            }
+            } 
 
             */
 
             _context.Users.Add(user);
-            await  _context.SaveChangesAsync(); 
+            await  _context.SaveChangesAsync();
+            
+         
 
             return Ok("Données ajoutées avec succès.");
         }
 
+
     }
+ 
 }
