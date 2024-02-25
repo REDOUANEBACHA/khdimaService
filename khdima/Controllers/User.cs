@@ -42,6 +42,7 @@ namespace khdima.Controllers
         }
 
         [HttpPost("AddUser" , Name = "AddUser")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddUser(Users user)
         {
             if (user == null)
