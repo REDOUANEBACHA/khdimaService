@@ -1,4 +1,5 @@
 ﻿using khdima.dbContext;
+using khdima.Helpers;
 using khdima.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,11 +19,12 @@ namespace khdima.Controllers
         // appelle le dbconext pour l'utiliser comme outile pour la base de donnee
         private readonly AppDbContext _context;
         private readonly IConfiguration _configuration;
-
-        public Auth(AppDbContext context , IConfiguration configuration)
+        private readonly Security _security;
+        public Auth(AppDbContext context , IConfiguration configuration , Security security)
         {
             _context = context;
             _configuration = configuration;
+            _security = security;
         }
 
         [HttpPost("Sign-in", Name = "Sign-in")]
@@ -47,47 +49,25 @@ namespace khdima.Controllers
                 return Unauthorized("Mot de passe incorrect.");
             }
 
-            var users = await _context.Users.Select(u => new
-            {
-                u.id,
-                u.first_name,
-                u.last_name,
-                u.phone,
-                u.birthday_date,
-                u.email,
-                u.last_access,
-                u.first_access,
-                u.created_at,
-                u.updated_at
-            }
-            ).ToListAsync();
+            var users = await _context.Users.ToListAsync();
 
             // Générer un JWT
-            var token = GenerateJwtToken(user);
+            var token = _security.GenerateJwtToken(user);
+    
 
-            return Ok(token);
+            // Écriture du token dans le cookie
+            Response.Cookies.Append("AccessToken", token, new CookieOptions
+            {
+                HttpOnly = true,// Assurez-vous que le cookie peut être lu depuis JavaScript si nécessaire
+                Secure  =  true,
+                SameSite = SameSiteMode.None
+            });
+
+            return Ok("succes login");
 
          
         }
-
-        private string GenerateJwtToken(Users user)
-        {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var token = new JwtSecurityToken(
-                _configuration["Jwt:Issuer"],
-                _configuration["Jwt:Audience"],
-                       claims: new[] {
-                    new Claim("idUser", user.id.ToString()),
-                    new Claim("name", $"{user.first_name} {user.last_name}"),
-                },
-                expires: DateTime.UtcNow.AddMinutes(10),
-                signingCredentials: signIn);
-
-
-           return new JwtSecurityTokenHandler().WriteToken(token);
-
-        }
+  
 
     }
 }
