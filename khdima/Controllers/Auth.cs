@@ -1,6 +1,5 @@
 ﻿using khdima.dbContext;
 using khdima.Helpers;
-using khdima.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +8,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Linq;
+using khdima.Models.type;
 
 namespace khdima.Controllers
 {
@@ -30,40 +31,44 @@ namespace khdima.Controllers
         [HttpPost("Sign-in", Name = "Sign-in")]
         public async Task<IActionResult> SingIn([FromBody] SignInRequest signInRequest)
         {
-              /*  {
-                    "email": "r.aitelbacha@gmail.com",
-                    "password": "red"
-                  }
-              */
+            var userResult = (from userHasRole in _context.User_has_role
+                              join user in _context.Users on userHasRole.id_user equals user.id
+                              join role in _context.Roles on userHasRole.id_role equals role.id
+                              where user.email == signInRequest.Email
+                              select new UserRole
+                              {
+                                  UserHasRole = userHasRole,
+                                  User = user,
+                                  Role = role
+                              }).FirstOrDefault();
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.email == signInRequest.Email);
-            
-            if (user == null)
+            var filterUserResult = new { idUser =  userResult.User.id , roleUser = userResult.Role.title };
+            if (userResult == null)
             {
                 return NotFound("Aucun utilisateur trouvé avec cette adresse e-mail.");
             }
 
          
-            if (user.password != signInRequest.Password)
+            if (userResult.User.password != signInRequest.Password)
             {
                 return Unauthorized("Mot de passe incorrect.");
             }
 
-            var users = await _context.Users.ToListAsync();
-
+         
             // Générer un JWT
-            var token = _security.GenerateJwtToken(user);
-    
+            var token = _security.GenerateJwtToken(userResult);
+
 
             // Écriture du token dans le cookie
             Response.Cookies.Append("AccessToken", token, new CookieOptions
             {
-                HttpOnly = true,// Assurez-vous que le cookie peut être lu depuis JavaScript si nécessaire
+                HttpOnly = true,
                 Secure  =  true,
                 SameSite = SameSiteMode.None
             });
 
-            return Ok("succes login");
+            return Ok(filterUserResult);
+         
 
          
         }
