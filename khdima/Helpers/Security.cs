@@ -1,5 +1,7 @@
 ﻿
+
 using khdima.Models;
+using khdima.Models.type;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -18,7 +20,7 @@ namespace khdima.Helpers
             _configuration = configuration;
         }
 
-        public string GenerateJwtToken(Users user)
+        public string GenerateJwtToken(UserRole UserRole)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -26,9 +28,9 @@ namespace khdima.Helpers
                 _configuration["Jwt:Issuer"],
                 _configuration["Jwt:Audience"],
                        claims: new[] {
-                    new Claim("idUser", user.id.ToString()),
-                    new Claim("name", $"{user.first_name} {user.last_name}"),
-                     new Claim("role", $"Admin"),
+                    new Claim("idUser", UserRole.User.id.ToString()),
+                    new Claim("name", $"{UserRole.User.first_name} {UserRole.User.last_name}"),
+                     new Claim("role", $"{UserRole.Role.title}"),
                 },
                 expires: DateTime.UtcNow.AddMinutes(10),
                 signingCredentials: signIn);
@@ -59,6 +61,6 @@ namespace khdima.Helpers
 
         }
 
-
+     
     }
 }
