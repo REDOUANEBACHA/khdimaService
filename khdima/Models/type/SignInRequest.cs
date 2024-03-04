@@ -1,4 +1,4 @@
-﻿namespace khdima.Models
+﻿namespace khdima.Models.type
 {
     public class SignInRequest
     {
