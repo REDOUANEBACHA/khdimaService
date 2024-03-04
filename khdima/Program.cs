@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using khdima.Helpers;
-using khdima.Helpers.MiddleweareJwt;
+
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.CookiePolicy;
 
@@ -89,4 +89,5 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// dotnet watch run -> vs code 
 app.Run();
