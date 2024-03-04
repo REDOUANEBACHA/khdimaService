@@ -2,14 +2,9 @@
 using khdima.Helpers;
 using khdima.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Text;
-using System.Xml.Linq;
+
 
 namespace khdima.Controllers
 {
@@ -40,6 +35,30 @@ namespace khdima.Controllers
 
             return Ok(users);
         }
+
+        [HttpGet("GetUser/{id}", Name = "GetUser")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetUser(int id)
+        {
+            var userResult = await (from userRole in _context.User_has_role
+                                    join user in _context.Users on userRole.id_user equals user.id
+                                    join role in _context.Roles on userRole.id_role equals role.id
+                                    where user.id == id
+                                    select new
+                                    { 
+                                        UserRole = userRole,
+                                        User = user,
+                                        Role = role
+                                    }).FirstOrDefaultAsync();
+
+            if (userResult == null)
+            {
+                return NotFound(); 
+            }
+
+            return Ok(userResult); 
+        }
+
 
         [HttpPost("AddUser" , Name = "AddUser")]
         [Authorize(Roles = "Admin")]
